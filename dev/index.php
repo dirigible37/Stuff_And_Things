@@ -84,7 +84,7 @@ $.getJSON(url, function(data) {
 			submit_time = submit_time + hours.toFixed(2) + " hours ago";
 		}
 
-		items.push("<tr><td class='col-md-1'><a id='"+i+"_perma'href='http://reddit.com/"+post.data.permalink+"' target='_blank' >Comments</a></td><td class='col-md-5'>"+submit_time+"</td></tr>");
+		items.push("<tr><td class='col-md-1'><a id='"+i+"_perma'href='http://reddit.com/"+post.data.permalink+"' target='_blank' >Comments</a></td><td id='"+i+"_time' class='col-md-5'>"+submit_time+"</td></tr>");
 });
 $( "<table/>", {
 	"class": "table table-striped",
@@ -111,6 +111,24 @@ function update_image(i, post) {
 		$("#"+i+"_img").attr("src", image);
 }
 
+function update_time(i, post) {
+	var utcseconds = post.data.created_utc;
+	var d = new Date(0);
+	d.setUTCSeconds(utcseconds);
+	var dnow = new Date();
+	var hours_since = dnow-d;
+	var submit_time = "Submitted ";
+	if(hours_since < 60*60*1000) {
+		var mins_since = (dnow - d)/60/1000;
+		submit_time = submit_time + mins_since.toFixed(0) + " minutes ago";
+	}
+	else {
+		var hours = hours_since/60/60/1000;
+		submit_time = submit_time + hours.toFixed(2) + " hours ago";
+	}
+	$("#"+i+"_time").text(submit_time);
+}
+
 setInterval( function() {
 	$.getJSON(url, function(data) {
 		$.each(data.data.children, function(i, post) {
@@ -120,6 +138,7 @@ setInterval( function() {
 			$("#"+i+"_perma").attr("href", "http://reddit.com/"+post.data.permalink);
 			update_price(i, post);
 			update_image(i, post);
+			update_time(i, post);
 		});
 	});
 	console.log("woot");
