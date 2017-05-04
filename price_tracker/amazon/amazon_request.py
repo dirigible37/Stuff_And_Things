@@ -44,38 +44,40 @@ res = r.text
 tree = ET.fromstring(res)
 thing = bs(res)
 
-#brand =  tree[1][1][4].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}Brand').text
-#title_tmp = tree[1][1][8].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}Title').text
+brand =  tree[1][1][8].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}Brand').text
+title_tmp = tree[1][1][8].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}Title').text
 
-#print "Title: "+title_tmp
-#print "Best New: "+tree[1][1][9][0][2].text
-#print "Best Used: "+tree[1][1][9][1][2].text
+#for idx, child in enumerate(tree[1][1][10][3][1][1]):
+#	tmp = str(child)
+#	one = tmp.replace("<Element '{http://webservices.amazon.com/AWSECommerceService/2011-08-01}","")
+#	two = one.split("'",1)[0]
+#	print two + " " + str(idx)
+#	print child.text
+#	print "\n"
+cur.execute("SELECT `Processed` FROM `Item_Name_Lookup` WHERE `Raw` = '"+title_tmp+"'")
 
-for idx, child in enumerate(tree[1][1]):
-	tmp = str(child)
-	one = tmp.replace("<Element '{http://webservices.amazon.com/AWSECommerceService/2011-08-01}","")
-	two = one.split("'",1)[0]
-	print two + " " + str(idx)
-	print child.text
-	print "\n"
+title = cur.fetchone()[0]
+timestamp = str(datetime.datetime.utcnow())
 
-#cur.execute("SELECT `Processed` FROM `Item_Name_Lookup` WHERE `Raw` = '"+title_tmp+"'")
+m = md5.new()
+m.update(brand)
+m.update(title)
+m.update("amazon")
+md5_hash = m.hexdigest()
 
-#title = cur.fetchone()[0]
+list_price = tree[1][1][10][3][1][1].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}FormattedPrice').text
 
-#m = md5.new()
-#m.update(brand)
-#m.update(title)
-#m.update("amazon")
-#md5_hash = m.digest()
+#print "Hash: "+md5_hash
+#print "Title: "+title
+#print "Brand: "+brand
+#print "Best New: "+list_price
+cur.execute("UPDATE `Item_List` SET `Current`=0 and `End_Date`='"+timestamp+"' WHERE `Current`=1 AND `Hash_Code`='"+md5_hash+"' AND `Price` <> '"+list_price+"' AND `Condition`='New'")
+cur.execute("INSERT IGNORE INTO `Item_List`(`Hash_Code`, `Manufacturer`, `Item Name`, `Price`, `Retailer`, `Condition`, `Current`, `Start_Date`) VALUES ('"+md5_hash+"','"+brand+"','"+title+"','"+list_price+"','Amazon','New',1,'"+timestamp+"')")
 
-#print brand 
-#print list_price
-#print title
+list_price = tree[1][1][9][1].find('{http://webservices.amazon.com/AWSECommerceService/2011-08-01}FormattedPrice').text
+cur.execute("UPDATE `Item_List` SET `Current`=0 and `End_Date`='"+timestamp+"' WHERE `Current`=1 AND `Hash_Code`='"+md5_hash+"' AND `Price` <> '"+list_price+"' AND `Condition`='Used'")
+cur.execute("INSERT IGNORE  INTO `Item_List`(`Hash_Code`, `Manufacturer`, `Item Name`, `Price`, `Retailer`, `Condition`, `Current`, `Start_Date`) VALUES ('"+md5_hash+"','"+brand+"','"+title+"','"+list_price+"','Amazon','Used',1,'"+timestamp+"')")
 
-# Use all the SQL you like
-#cur.execute("INSERT IGNORE INTO `Item_List`(`Hash_Code`,`Manufacturer`, `Item Name`, `Price`, `Retailer`) VALUES ('"+md5_hash+"','"+brand+"','"+title+"','"+list_price+"','Amazon')")
-
-#db.commit()
+db.commit()
 
 db.close()
