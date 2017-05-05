@@ -10,9 +10,9 @@ import sys
 import md5
 
 db = MySQLdb.connect(host="localhost",    # your host, usually localhost
-		user="wmohr",         # your username
-		passwd="iamjonsnow99",  # your password
-		db="wmohr")        # name of the data base
+		user="stuff",         # your username
+		passwd="super_secure_password",  # your password
+		db="stuff_and_things")        # name of the data base
 
 cur = db.cursor()
 
